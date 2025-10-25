@@ -40,9 +40,22 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Mount static files and templates
-app.mount("/static", StaticFiles(directory=str(Path(__file__).parent / "static")), name="static")
-templates = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
+# Mount static files and templates (with error handling for serverless)
+try:
+    static_dir = Path(__file__).parent / "static"
+    templates_dir = Path(__file__).parent / "templates"
+
+    if static_dir.exists():
+        app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+
+    if templates_dir.exists():
+        templates = Jinja2Templates(directory=str(templates_dir))
+    else:
+        templates = None
+except Exception as e:
+    # In serverless environment, static files may not be available
+    print(f"Warning: Could not mount static files: {e}")
+    templates = None
 
 # In-memory storage for scan jobs
 scan_jobs: Dict[str, Dict[str, Any]] = {}
@@ -92,6 +105,14 @@ class ScanStatus(BaseModel):
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
     """Serve the main landing page."""
+    if templates is None:
+        return JSONResponse({
+            "message": "Ichipass Scanner API",
+            "version": "1.0.0",
+            "status": "running",
+            "docs": "/docs",
+            "health": "/api/health"
+        })
     return templates.TemplateResponse("index.html", {"request": request})
 
 
