@@ -7,7 +7,7 @@ import numpy as np
 import yfinance as yf
 from pathlib import Path
 import pickle
-from typing import Optional, Union, List
+from typing import Optional, Union, List, Dict
 import logging
 
 logger = logging.getLogger(__name__)
@@ -73,11 +73,11 @@ class DataLoader:
             return None
     
     def load_from_csv(
-        self, 
-        file_path: Path, 
+        self,
+        file_path: Path,
         symbol_column: str = 'symbol',
         date_column: str = 'date'
-    ) -> dict[str, pd.DataFrame]:
+    ) -> Dict[str, pd.DataFrame]:
         """Load OHLCV data from CSV file.
         
         Expected CSV format: symbol, date, open, high, low, close, volume
