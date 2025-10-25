@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ichipass - Ichimoku Cloud Scanner</title>
+    <link rel="stylesheet" href="/static/css/neumorphic.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header fade-in">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <div class="logo-icon">📈</div>
+                    <div class="logo-text">
+                        <h1>Ichipass</h1>
+                        <p>Ichimoku Cloud Scanner</p>
+                    </div>
+                </div>
+                <nav class="nav">
+                    <button class="nav-btn active" onclick="showSection('scanner')">Scanner</button>
+                    <button class="nav-btn" onclick="showSection('results')">Results</button>
+                    <button class="nav-btn" onclick="showSection('settings')">Settings</button>
+                    <button class="nav-btn" onclick="showSection('docs')">Docs</button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Stats Overview -->
+        <div class="stats-grid fade-in">
+            <div class="stat-card">
+                <div class="stat-value" id="totalScans">0</div>
+                <div class="stat-label">Total Scans</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="matchesFound">0</div>
+                <div class="stat-label">Matches Found</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="symbolsTracked">0</div>
+                <div class="stat-label">Symbols Tracked</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="successRate">0%</div>
+                <div class="stat-label">Hit Rate</div>
+            </div>
+        </div>
+
+        <!-- Scanner Section -->
+        <div id="scannerSection" class="section">
+            <div class="main-grid">
+                <!-- Scan Configuration Card -->
+                <div class="card fade-in">
+                    <div class="card-header">
+                        <div class="card-icon">⚙️</div>
+                        <div>
+                            <div class="card-title">Scan Configuration</div>
+                            <div class="card-subtitle">Setup your scan parameters</div>
+                        </div>
+                    </div>
+
+                    <form id="scanForm">
+                        <div class="form-group">
+                            <label class="form-label">Ticker Symbols</label>
+                            <input type="text" class="form-input" id="tickers"
+                                   placeholder="AAPL, MSFT, GOOGL..." required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Start Date</label>
+                            <input type="date" class="form-input" id="startDate" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">End Date</label>
+                            <input type="date" class="form-input" id="endDate" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Lookback Period (Days)</label>
+                            <input type="number" class="form-input" id="lookback"
+                                   value="10" min="1" max="100">
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-block">
+                            <span>🚀</span>
+                            <span>Start Scan</span>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Ichimoku Parameters Card -->
+                <div class="card fade-in">
+                    <div class="card-header">
+                        <div class="card-icon">📊</div>
+                        <div>
+                            <div class="card-title">Ichimoku Parameters</div>
+                            <div class="card-subtitle">Configure indicator periods</div>
+                        </div>
+                    </div>
+
+                    <div class="param-grid">
+                        <div class="param-item">
+                            <div class="param-label">Tenkan</div>
+                            <input type="number" class="form-input param-value" id="tenkan"
+                                   value="9" min="1" style="text-align: center; font-size: 1.2rem;">
+                        </div>
+                        <div class="param-item">
+                            <div class="param-label">Kijun</div>
+                            <input type="number" class="form-input param-value" id="kijun"
+                                   value="26" min="1" style="text-align: center; font-size: 1.2rem;">
+                        </div>
+                        <div class="param-item">
+                            <div class="param-label">Senkou</div>
+                            <input type="number" class="form-input param-value" id="senkou"
+                                   value="52" min="1" style="text-align: center; font-size: 1.2rem;">
+                        </div>
+                    </div>
+
+                    <div style="margin-top: var(--spacing-lg);">
+                        <div class="card-subtitle" style="margin-bottom: var(--spacing-sm);">Quick Presets</div>
+                        <div style="display: flex; gap: var(--spacing-sm); flex-wrap: wrap;">
+                            <button class="btn" onclick="applyPreset('default')">
+                                <span>Default (9/26/52)</span>
+                            </button>
+                            <button class="btn" onclick="applyPreset('fast')">
+                                <span>Fast (7/22/44)</span>
+                            </button>
+                            <button class="btn" onclick="applyPreset('slow')">
+                                <span>Slow (10/30/60)</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filters Card -->
+                <div class="card fade-in">
+                    <div class="card-header">
+                        <div class="card-icon">🔍</div>
+                        <div>
+                            <div class="card-title">Filters</div>
+                            <div class="card-subtitle">Apply additional criteria</div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <span>Minimum Price ($)</span>
+                        </label>
+                        <input type="number" class="form-input" id="minPrice"
+                               value="0" min="0" step="0.01">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <span>Min Avg Dollar Volume</span>
+                        </label>
+                        <input type="number" class="form-input" id="minVolume"
+                               value="0" min="0" step="1000">
+                    </div>
+
+                    <div class="form-group" style="display: flex; justify-content: space-between; align-items: center;">
+                        <label class="form-label" style="margin: 0;">Strict Cross Mode</label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" class="toggle-input" id="strictCross" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="form-group" style="display: flex; justify-content: space-between; align-items: center;">
+                        <label class="form-label" style="margin: 0;">Use Cache</label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" class="toggle-input" id="useCache" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Scan Progress Card -->
+                <div class="card fade-in">
+                    <div class="card-header">
+                        <div class="card-icon">⏱️</div>
+                        <div>
+                            <div class="card-title">Scan Progress</div>
+                            <div class="card-subtitle">Monitor scanning status</div>
+                        </div>
+                    </div>
+
+                    <div id="scanStatus">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressBar" style="width: 0%;">0%</div>
+                        </div>
+                        <div style="margin-top: var(--spacing-md); text-align: center; color: var(--text-secondary);">
+                            <p id="statusText">Ready to scan...</p>
+                            <p id="scanDetails" style="font-size: 0.875rem; margin-top: var(--spacing-xs);"></p>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: var(--spacing-lg); display: none;" id="scanActions">
+                        <button class="btn btn-success btn-block" onclick="downloadResults()">
+                            <span>📥</span>
+                            <span>Download CSV</span>
+                        </button>
+                        <button class="btn btn-danger btn-block" onclick="cancelScan()"
+                                style="margin-top: var(--spacing-sm);">
+                            <span>❌</span>
+                            <span>Cancel Scan</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div id="resultsSection" class="section" style="display: none;">
+            <div class="card fade-in">
+                <div class="card-header">
+                    <div class="card-icon">📋</div>
+                    <div>
+                        <div class="card-title">Scan Results</div>
+                        <div class="card-subtitle">Ichimoku cloud breakouts detected</div>
+                    </div>
+                </div>
+
+                <div id="resultsContainer">
+                    <p style="text-align: center; color: var(--text-secondary); padding: var(--spacing-xl);">
+                        No scan results yet. Run a scan to see results here.
+                    </p>
+                </div>
+
+                <div id="resultsTable" style="display: none; overflow-x: auto;">
+                    <table class="results-table">
+                        <thead>
+                            <tr>
+                                <th>Symbol</th>
+                                <th>Date</th>
+                                <th>Close</th>
+                                <th>Cloud Top</th>
+                                <th>Distance %</th>
+                                <th>Avg $ Vol</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="resultsBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Section -->
+        <div id="settingsSection" class="section" style="display: none;">
+            <div class="main-grid">
+                <div class="card fade-in">
+                    <div class="card-header">
+                        <div class="card-icon">🔧</div>
+                        <div>
+                            <div class="card-title">General Settings</div>
+                            <div class="card-subtitle">Configure application behavior</div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Thread Count</label>
+                        <input type="number" class="form-input" id="threads"
+                               value="8" min="1" max="32">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Cache Directory</label>
+                        <input type="text" class="form-input" id="cacheDir"
+                               placeholder="/path/to/cache" value="./cache">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Log Level</label>
+                        <select class="form-input" id="logLevel">
+                            <option value="DEBUG">Debug</option>
+                            <option value="INFO" selected>Info</option>
+                            <option value="WARNING">Warning</option>
+                            <option value="ERROR">Error</option>
+                        </select>
+                    </div>
+
+                    <button class="btn btn-primary btn-block" onclick="saveSettings()">
+                        <span>💾</span>
+                        <span>Save Settings</span>
+                    </button>
+                </div>
+
+                <div class="card fade-in">
+                    <div class="card-header">
+                        <div class="card-icon">📁</div>
+                        <div>
+                            <div class="card-title">Data Management</div>
+                            <div class="card-subtitle">Manage cached data</div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card" style="margin-bottom: var(--spacing-md);">
+                        <div class="stat-value" id="cacheSize">0 MB</div>
+                        <div class="stat-label">Cache Size</div>
+                    </div>
+
+                    <button class="btn btn-danger btn-block" onclick="clearCache()">
+                        <span>🗑️</span>
+                        <span>Clear Cache</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Documentation Section -->
+        <div id="docsSection" class="section" style="display: none;">
+            <div class="card fade-in">
+                <div class="card-header">
+                    <div class="card-icon">📖</div>
+                    <div>
+                        <div class="card-title">Documentation</div>
+                        <div class="card-subtitle">Learn how to use Ichipass</div>
+                    </div>
+                </div>
+
+                <div style="color: var(--text-primary); line-height: 1.8;">
+                    <h2 style="margin-bottom: var(--spacing-md); color: var(--accent-primary);">What is Ichipass?</h2>
+                    <p style="margin-bottom: var(--spacing-md);">
+                        Ichipass is a powerful Python-based trading scanner that identifies stocks breaking above
+                        the Ichimoku Cloud for the first time in a specified lookback period. This is considered
+                        a significant bullish signal in technical analysis.
+                    </p>
+
+                    <h3 style="margin: var(--spacing-lg) 0 var(--spacing-sm) 0; color: var(--accent-primary);">
+                        Ichimoku Cloud Components
+                    </h3>
+                    <ul style="margin-left: var(--spacing-lg); margin-bottom: var(--spacing-md);">
+                        <li><strong>Tenkan-sen (Conversion Line):</strong> 9-period midpoint</li>
+                        <li><strong>Kijun-sen (Base Line):</strong> 26-period midpoint</li>
+                        <li><strong>Senkou Span A:</strong> Average of Tenkan and Kijun, plotted 26 periods ahead</li>
+                        <li><strong>Senkou Span B:</strong> 52-period midpoint, plotted 26 periods ahead</li>
+                        <li><strong>Cloud:</strong> Area between Senkou Span A and B</li>
+                    </ul>
+
+                    <h3 style="margin: var(--spacing-lg) 0 var(--spacing-sm) 0; color: var(--accent-primary);">
+                        How to Use
+                    </h3>
+                    <ol style="margin-left: var(--spacing-lg); margin-bottom: var(--spacing-md);">
+                        <li>Enter ticker symbols (comma-separated)</li>
+                        <li>Set date range for analysis</li>
+                        <li>Configure Ichimoku parameters (or use presets)</li>
+                        <li>Apply filters to narrow results</li>
+                        <li>Click "Start Scan" to begin</li>
+                        <li>Review results and download CSV</li>
+                    </ol>
+
+                    <h3 style="margin: var(--spacing-lg) 0 var(--spacing-sm) 0; color: var(--accent-primary);">
+                        Filter Options
+                    </h3>
+                    <ul style="margin-left: var(--spacing-lg);">
+                        <li><strong>Minimum Price:</strong> Filter out penny stocks</li>
+                        <li><strong>Min Avg Dollar Volume:</strong> Ensure liquidity</li>
+                        <li><strong>Strict Cross Mode:</strong> Require previous day below cloud</li>
+                        <li><strong>Lookback Period:</strong> Days to check for no prior breaks</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
