@@ -1,18 +1,16 @@
 # main.py  (FastAPI entrypoint for Vercel)
-from typing import List, Optional
 from datetime import datetime
 from pathlib import Path
-from pydantic import BaseModel, Field, validator
+from typing import List, Optional
+
 from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel, Field
 
 # import your existing modules
 from data.loader import DataLoader
 from scan.criteria import IchimokuScanner
 from scan.runner import ScanRunner
 from filters.volume import create_volume_filter, create_min_price_filter
-# optional filters you might add later
-# from filters.macd import create_macd_filter
-# from filters.rsi import create_rsi_filter
 from utils.logging import setup_logging
 
 app = FastAPI(title="Ichimoku Cloud Scanner API")
@@ -20,7 +18,7 @@ app = FastAPI(title="Ichimoku Cloud Scanner API")
 class ScanRequest(BaseModel):
     tickers: List[str]
     start: str = Field(..., description="YYYY-MM-DD")
-    end: str = Field("today", description='YYYY-MM-DD or "today"')
+    end: str = "today"
     ichi_tenkan: int = 9
     ichi_kijun: int = 26
     ichi_senkou: int = 52
@@ -33,23 +31,11 @@ class ScanRequest(BaseModel):
     log_level: str = "INFO"
     cache_dir: Optional[str] = None
 
-    @validator("tickers")
-    def _dedupe(cls, v):
-        s = sorted(set([t.strip().upper() for t in v if t.strip()]))
-        if not s:
-            raise ValueError("tickers cannot be empty")
-        return s
-
-class ScanResponse(BaseModel):
-    scan_date: str
-    results_count: int
-    results: list
-
 @app.get("/health")
 def health():
     return {"ok": True, "time": datetime.utcnow().isoformat()}
 
-@app.post("/scan", response_model=ScanResponse)
+@app.post("/scan")
 def scan(req: ScanRequest):
     try:
         setup_logging(req.log_level)
@@ -67,7 +53,7 @@ def scan(req: ScanRequest):
         runner = ScanRunner(
             data_loader=data_loader,
             scanner=scanner,
-            max_workers=max(1, min(req.threads, 8)),  # be kind to serverless
+            max_workers=max(1, min(req.threads, 8)),
         )
 
         if req.min_avg_dollar_volume > 0:
@@ -83,13 +69,12 @@ def scan(req: ScanRequest):
             dry_run=False,
         )
 
-        return ScanResponse(
-            scan_date=datetime.utcnow().isoformat(),
-            results_count=len(results),
-            results=results,
-        )
+        return {
+            "scan_date": datetime.utcnow().isoformat(),
+            "results_count": len(results),
+            "results": results,
+        }
     except Exception as e:
-        # Make sure the error shows up in Vercel logs
         import traceback, sys
         traceback.print_exc(file=sys.stderr)
         raise HTTPException(status_code=500, detail=str(e))
