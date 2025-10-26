@@ -1,6 +1,6 @@
 """
 Vercel Serverless Function Entry Point
-Re-exports the FastAPI app from web/app.py
+Re-exports the lightweight FastAPI app from root app.py
 """
 import sys
 from pathlib import Path
@@ -10,8 +10,9 @@ try:
     project_root = Path(__file__).parent.parent
     sys.path.insert(0, str(project_root))
 
-    # Import the FastAPI app from web directory
-    from web.app import app
+    # Import the lightweight FastAPI app from root directory
+    # This version doesn't require static files or templates (serverless-friendly)
+    from app import app
 
     # Export for Vercel
     __all__ = ['app']
